@@ -19,22 +19,24 @@ source-repository head
 common deps
   build-depends:
       base >= 4.10 && < 5
+  ghc-options: -Wall
 
 library
   import: deps
   hs-source-dirs: src/lib
   exposed-modules:
       Isumi.Math.FFT.Bruun
-  build-depends:
-      fft-bruun-internal
-  default-language: Haskell2010
-
-library fft-bruun-internal
-  import: deps
-  hs-source-dirs: src/lib-internal
-  exposed-modules:
-      Isumi.Math.FFT.Utils
-    , Isumi.Math.FFT.Bruun.Internal
+    , Isumi.Math.FFT.Internal.Bruun
+    , Isumi.Math.FFT.Internal.Utils
+    , Isumi.Math.FFT.Internal.Polynomial
+  include-dirs: src/lib/include
+  c-sources:
+      src/lib/c/polynomial.c
+  includes:
+      src/lib/include/polynomial.h
   build-depends:
       vector
+    , mono-traversable
+    , monad-loops
   default-language: Haskell2010
+
