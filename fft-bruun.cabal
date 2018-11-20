@@ -19,6 +19,7 @@ source-repository head
 common deps
   build-depends:
       base >= 4.10 && < 5
+    , vector
   ghc-options: -Wall
 
 library
@@ -29,6 +30,8 @@ library
     , Isumi.Math.FFT.Internal.Bruun
     , Isumi.Math.FFT.Internal.Utils
     , Isumi.Math.FFT.Internal.Polynomial
+    , Isumi.Math.AppxEq
+    , Isumi.Debug.Trace
   include-dirs: src/lib/include
   c-sources:
       src/lib/c/polynomial.c
@@ -38,5 +41,19 @@ library
       vector
     , mono-traversable
     , monad-loops
+  default-language: Haskell2010
+
+test-suite fft-bruun-test
+  import: deps
+  type: exitcode-stdio-1.0
+  hs-source-dirs: src/test
+  main-is: Spec.hs
+  other-modules:
+      Isumi.Math.FFT.PolynomialSpec
+    , Isumi.Hspec
+  build-depends:
+      fft-bruun
+    , hspec
+    , QuickCheck
   default-language: Haskell2010
 
