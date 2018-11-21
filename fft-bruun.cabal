@@ -32,11 +32,6 @@ library
     , Isumi.Math.FFT.Internal.Polynomial
     , Isumi.Math.AppxEq
     , Isumi.Debug.Trace
-  include-dirs: src/lib/include
-  c-sources:
-      src/lib/c/polynomial.c
-  includes:
-      src/lib/include/polynomial.h
   build-depends:
       vector
     , mono-traversable
