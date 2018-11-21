@@ -4,6 +4,7 @@ module Isumi.Math.FFT.Internal.Utils
   , vecFromValues
   , compI
   , findM
+  , isSorted
   ) where
 
 import           Data.Complex
@@ -33,4 +34,14 @@ findM p (x:xs) = do
   b <- p x
   if b then pure $ Just x
        else findM p xs
+
+-- |Determine whether a list is sorted strictly.
+isSorted :: Ord a
+         => Bool -- ^ ascending if True, descending if False
+         -> [a]
+         -> Bool
+isSorted _ [] = True
+isSorted _ [_] = True
+isSorted asc (x:y:zs) =
+  (if asc then x < y else x > y) && isSorted asc zs
 
