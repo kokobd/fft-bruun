@@ -36,6 +36,7 @@ library
       vector
     , mono-traversable
     , monad-loops
+    , integer-logarithms
   default-language: Haskell2010
 
 test-suite fft-bruun-test
@@ -45,6 +46,7 @@ test-suite fft-bruun-test
   main-is: Spec.hs
   other-modules:
       Isumi.Math.FFT.PolynomialSpec
+    , Isumi.Math.FFT.BruunSpec
     , Isumi.Hspec
   build-depends:
       fft-bruun
