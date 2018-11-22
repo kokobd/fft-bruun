@@ -5,9 +5,10 @@ module Isumi.Math.FFT.PolynomialSpec
   )
 where
 
-import           Test.Hspec
 import           Isumi.Hspec
+import           Test.Hspec
 
+import           Data.Complex
 import           Isumi.Math.FFT.Internal.Polynomial
 
 spec :: Spec
@@ -26,4 +27,15 @@ spec = do
       let expected = [(3, 1), (1, 1)] :: [(Int, Double)]
       let actual = (1, 1) `polyMultiply'` [(2, 1), (0, 1)]
       expected `shouldBeAppx` actual
+  describe "factorDivisor" $ do
+    it "factors x^2 - 1 into (x - 1)(x + 1)" $
+      factorDivisor (BruunDivisorMinus 2) `shouldBeAppx`
+        Just (BruunDivisorMinus 1, BruunDivisorPlus 1 (0 :: Double))
+    it "factors x + 1 into Nothing" $
+      factorDivisor (BruunDivisorComplex (1 :: Complex Double)) `shouldBeAppx`
+        Nothing
+    it "factors x^4+1.5x^2+1 into (x^2+(sqrt 0.5)x+1)(x^2-(sqrt 0.5)x+1)" $ do
+      let c = sqrt 0.5 :: Double
+      factorDivisor (BruunDivisorPlus 4 1.5) `shouldBeAppx`
+        Just (BruunDivisorPlus 2 c, BruunDivisorPlus 2 (-c))
 

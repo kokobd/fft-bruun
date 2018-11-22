@@ -36,7 +36,7 @@ import           Data.STRef
 import qualified Data.Vector.Unboxed           as UV
 import qualified Data.Vector.Unboxed.Mutable   as MUV
 import           Isumi.Math.AppxEq
-import           Isumi.Math.FFT.Internal.Utils (findM, isSorted)
+import           Isumi.Math.FFT.Internal.Utils (findM, isSorted, realToComplex)
 
 -- | A finite polynomial, represented in either vector or list of (exponent,
 -- coefficient). Using these constructors implys no check for pre-conditions.
@@ -78,9 +78,17 @@ data BruunDivisor a =
                       BruunDivisorMinus Int
                       -- | \( x^n + cx^{\frac{n}{2}} + 1 \)
                     | BruunDivisorPlus Int a
-                      -- | \( c_1 x + c_2 x \)
-                    | BruunDivisorComplex (Complex a) (Complex a)
+                      -- | \( x + c \)
+                    | BruunDivisorComplex (Complex a)
                       deriving Show
+
+instance (RealFloat a, AppxEq a) => AppxEq (BruunDivisor a) where
+  (BruunDivisorMinus n1) ~= (BruunDivisorMinus n2) = n1 ~= n2
+  (BruunDivisorPlus n1 c1) ~= (BruunDivisorPlus n2 c2) = n1 ~= n2 && c1 ~= c2
+  (BruunDivisorComplex c1) ~= (BruunDivisorComplex c2) = c1 ~= c2
+  (BruunDivisorComplex c1) ~= (BruunDivisorMinus n) = n == 1 && c1 ~= (-1)
+  x@(BruunDivisorMinus _) ~= y@(BruunDivisorComplex _) = y ~= x
+  _ ~= _ = False
 
 {-|
   Convert 'BruunDivisor' to 'Polynomial'
@@ -93,8 +101,8 @@ divToPoly = \case
     PolyExpCoefRep [(deg, 1), (0, -1)]
   BruunDivisorPlus deg c -> Right $
     PolyExpCoefRep [(deg, 1), (deg `div` 2, c), (0, 1)]
-  BruunDivisorComplex c1 c0 -> Left $
-    PolyExpCoefRep [(1, c1), (0, c0)]
+  BruunDivisorComplex c -> Left $
+    PolyExpCoefRep [(1, 1), (0, c)]
 
 type UnboxFloatingAppxEq a = (UV.Unbox a, Floating a, AppxEq a)
 
@@ -193,7 +201,7 @@ polySubtract' (r, rDeg, rIsZero) dcs = do
 factorDivisor :: RealFloat a
               => BruunDivisor a
               -> Maybe (BruunDivisor a, BruunDivisor a)
-factorDivisor (BruunDivisorComplex _ _) = Nothing
+factorDivisor (BruunDivisorComplex _) = Nothing
 factorDivisor (BruunDivisorMinus n) =
   if n == 1
      then Nothing
@@ -215,8 +223,12 @@ factorDPToDPs n c =
 
 -- | Factor divisor in plus form into two divisors in complex form.
 -- Doesn't check for pre-condition.
-factorDPToDCs :: Floating a
+factorDPToDCs :: RealFloat a
               => a
               -> (BruunDivisor a, BruunDivisor a)
-factorDPToDCs c = undefined
+factorDPToDCs c =
+  (BruunDivisorComplex (c' / 2 + d), BruunDivisorComplex (c' / 2 - d))
+  where
+    c' = realToComplex c
+    d = sqrt (c' * c' - 4) / 2
 
