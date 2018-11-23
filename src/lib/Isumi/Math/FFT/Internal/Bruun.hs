@@ -9,8 +9,11 @@ where
 
 import           Data.Bits                          (shiftL)
 import           Data.Complex
-import           Data.List                          (concatMap, sortOn)
+import           Data.HashMap.Strict                (HashMap)
+import qualified Data.HashMap.Strict                as HashMap
+import           Data.List                          (concatMap)
 import           Data.Maybe
+import qualified Data.Vector                        as V
 import qualified Data.Vector.Unboxed                as UV
 import           Math.NumberTheory.Logarithms       (integerLog2)
 
@@ -30,7 +33,7 @@ fftDirect xs = UV.generate len genEntry
 -}
 cruN :: Int -> UV.Vector (Complex Double)
 cruN n = UV.generate n $ \k ->
-  exp (realToComplex (2 * k) * pi * compI) / fromIntegral n
+  exp (realToComplex k * (-2) * pi * compI / fromIntegral n)
 
 fftBruun :: UV.Vector Double -> Maybe (UV.Vector (Complex Double))
 fftBruun xs =
@@ -45,27 +48,30 @@ fftBruun xs =
 fftBruun' :: UV.Vector (Complex Double) -- ^cru array
           -> DivisorRemainder -- ^initial divisor and remainder
           -> UV.Vector (Complex Double)
-fftBruun' cruValues dr = UV.replicate n 0 UV.// indexToFFTVal
+fftBruun' cruValues dr =
+  UV.generate n (\i -> cruToFFT HashMap.! (cruValues' V.! i))
   where
   n = UV.length cruValues
-  cruToFFT :: [(Complex Double, Complex Double)]
-  cruToFFT = fmap (\(d, r) -> (finalDivisorToCRU d, finalRemainderToValue r))
+  cruToFFT :: HashMap (Integer, Integer) (Complex Double)
+  cruToFFT = HashMap.fromList
+           . fmap (\(d, r) -> (normalizeCRU . finalDivisorToCRU $ d,
+               finalRemainderToValue r))
            . factorDRAll $ dr
-  cruToIndex :: [(Complex Double, Int)]
-  cruToIndex = zip (UV.toList cruValues) [0..]
+  cruValues' = fmap normalizeCRU (UV.convert cruValues)
+    :: V.Vector (Integer, Integer)
 
-  fftVals = fmap snd . sortOnFirstVirt $ cruToFFT
-  indicies = fmap snd . sortOnFirstVirt $ cruToIndex
-  indexToFFTVal :: [(Int, Complex Double)]
-  indexToFFTVal = zip indicies fftVals
-
-sortOnFirstVirt :: [(Complex Double, b)] -> [(Complex Double, b)]
-sortOnFirstVirt = sortOn (imagPart . fst)
+normalizeCRU :: Complex Double -> (Integer, Integer)
+normalizeCRU (r :+ i) = (toInt r, toInt i)
+  where
+  toInt x = round (x * 1000000)
 
 finalDivisorToCRU :: BruunDivisor Double -> Complex Double
-finalDivisorToCRU (BruunDivisorComplex c) = c
-finalDivisorToCRU _                       =
-  error "Final stage divisors MUST be in complex form"
+finalDivisorToCRU (BruunDivisorComplex c) = (-1) * c
+finalDivisorToCRU (BruunDivisorMinus n)   = if n == 1 then 1 else error ""
+finalDivisorToCRU (BruunDivisorPlus n c)  =
+  if n == 1 && c == 0
+     then (-1)
+     else error ""
 
 finalRemainderToValue :: RealOrComplexPolynomial Double -> Complex Double
 finalRemainderToValue (ComplexPolynomial p) =
@@ -111,4 +117,3 @@ isPowerOf2 x = (1 `shiftL` integerLog2 (fromIntegral x)) == x
 extractListFromMaybe :: Maybe [a] -> [a]
 extractListFromMaybe Nothing   = []
 extractListFromMaybe (Just xs) = xs
-

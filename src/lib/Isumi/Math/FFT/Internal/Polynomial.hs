@@ -33,6 +33,7 @@ module Isumi.Math.FFT.Internal.Polynomial
   , polyMultiply'
   ) where
 
+import           Control.Exception
 import           Control.Monad.Loops
 import           Control.Monad.ST
 import           Data.Complex
@@ -48,6 +49,11 @@ import           Isumi.Math.FFT.Internal.Utils (findM, isSorted, realToComplex)
 data Polynomial a = PolyVecRep (UV.Vector a)
                   | PolyExpCoefRep [(Int, a)]
                     deriving Show
+
+instance (UV.Unbox a, AppxEq a) => AppxEq (Polynomial a) where
+  PolyVecRep v1 ~= PolyVecRep v2 = v1 ~= v2
+  PolyExpCoefRep xs ~= PolyExpCoefRep ys = xs ~= ys
+  _ ~= _ = False
 
 -- | Construct a polynomial from a vector of coefficients.
 --
@@ -109,6 +115,10 @@ divDegree (BruunDivisorMinus n)   = n
 
 data RealOrComplexPolynomial a = RealPolynomial (Polynomial a)
                                | ComplexPolynomial (Polynomial (Complex a))
+
+instance (UV.Unbox a, Show a) => Show (RealOrComplexPolynomial a) where
+  show (RealPolynomial p)    = show p
+  show (ComplexPolynomial p) = show p
 
 {-|
   Convert 'BruunDivisor' to 'Polynomial'
@@ -251,7 +261,8 @@ factorDPToDPs :: Floating a => Int -> a -> (BruunDivisor a, BruunDivisor a)
 factorDPToDPs n c =
   let n' = n `div` 2
       c' = sqrt (2 - c)
-   in (BruunDivisorPlus n' c', BruunDivisorPlus n' (-c'))
+   in assert (n' >= 2)
+        (BruunDivisorPlus n' c', BruunDivisorPlus n' (-c'))
 
 -- | Factor divisor in plus form into two divisors in complex form.
 -- Doesn't check for pre-condition.
