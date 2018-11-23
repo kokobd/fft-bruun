@@ -21,7 +21,7 @@ instance AppxEq Int where
   x ~= y = x == y
 
 instance AppxEq Double where
-  x ~= y = (x - y) < 0.000001
+  x ~= y = abs (x - y) < 0.000001
 
 instance AppxEq a => AppxEq (Complex a) where
   (r :+ v) ~= (r2 :+ v2) = (r ~= r2) && (v ~= v2)

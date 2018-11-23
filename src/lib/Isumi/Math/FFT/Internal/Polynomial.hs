@@ -19,15 +19,21 @@ module Isumi.Math.FFT.Internal.Polynomial
   , polyToVecRep
   , polyFromVecRep
   , polyFromExpCoefRep
+  , polyDegree
+  , mapPoly
   , UnboxFloatingAppxEq
   , modPoly
+  , RealOrComplexPolynomial(..)
+  , modPolyG
   , BruunDivisor(..)
   , factorDivisor
   , divToPoly
+  , divDegree
   -- * Internal APIs
   , polyMultiply'
   ) where
 
+import           Control.Exception
 import           Control.Monad.Loops
 import           Control.Monad.ST
 import           Data.Complex
@@ -43,6 +49,11 @@ import           Isumi.Math.FFT.Internal.Utils (findM, isSorted, realToComplex)
 data Polynomial a = PolyVecRep (UV.Vector a)
                   | PolyExpCoefRep [(Int, a)]
                     deriving Show
+
+instance (UV.Unbox a, AppxEq a) => AppxEq (Polynomial a) where
+  PolyVecRep v1 ~= PolyVecRep v2 = v1 ~= v2
+  PolyExpCoefRep xs ~= PolyExpCoefRep ys = xs ~= ys
+  _ ~= _ = False
 
 -- | Construct a polynomial from a vector of coefficients.
 --
@@ -68,6 +79,13 @@ polyToVecRep :: Polynomial a -> Maybe (UV.Vector a)
 polyToVecRep (PolyVecRep xs) = Just xs
 polyToVecRep _               = Nothing
 
+mapPoly :: (UV.Unbox a, UV.Unbox b)
+        => (a -> b)
+        -> Polynomial a
+        -> Polynomial b
+mapPoly f (PolyVecRep v) = PolyVecRep (UV.map f v)
+mapPoly f (PolyExpCoefRep ecs) = PolyExpCoefRep $ fmap (\(e, c) -> (e, f c)) ecs
+
 {-| Divisor in the Bruun's FFT algorithm.
 'a' is some floating type, such as 'Double'
 
@@ -90,21 +108,45 @@ instance (RealFloat a, AppxEq a) => AppxEq (BruunDivisor a) where
   x@(BruunDivisorMinus _) ~= y@(BruunDivisorComplex _) = y ~= x
   _ ~= _ = False
 
+divDegree :: BruunDivisor a -> Int
+divDegree (BruunDivisorComplex _) = 1
+divDegree (BruunDivisorPlus n _)  = n
+divDegree (BruunDivisorMinus n)   = n
+
+data RealOrComplexPolynomial a = RealPolynomial (Polynomial a)
+                               | ComplexPolynomial (Polynomial (Complex a))
+
+instance (UV.Unbox a, Show a) => Show (RealOrComplexPolynomial a) where
+  show (RealPolynomial p)    = show p
+  show (ComplexPolynomial p) = show p
+
 {-|
   Convert 'BruunDivisor' to 'Polynomial'
 -}
 divToPoly :: forall a . (UV.Unbox a, RealFloat a)
           => BruunDivisor a
-          -> Either (Polynomial (Complex a)) (Polynomial a)
+          -> RealOrComplexPolynomial a
 divToPoly = \case
-  BruunDivisorMinus deg -> Right $
+  BruunDivisorMinus deg -> RealPolynomial $
     PolyExpCoefRep [(deg, 1), (0, -1)]
-  BruunDivisorPlus deg c -> Right $
+  BruunDivisorPlus deg c -> RealPolynomial $
     PolyExpCoefRep [(deg, 1), (deg `div` 2, c), (0, 1)]
-  BruunDivisorComplex c -> Left $
+  BruunDivisorComplex c -> ComplexPolynomial $
     PolyExpCoefRep [(1, 1), (0, c)]
 
 type UnboxFloatingAppxEq a = (UV.Unbox a, Floating a, AppxEq a)
+
+modPolyG :: (UnboxFloatingAppxEq a, RealFloat a)
+         => RealOrComplexPolynomial a
+         -> RealOrComplexPolynomial a
+         -> Maybe (RealOrComplexPolynomial a)
+modPolyG (RealPolynomial p) (RealPolynomial d) = RealPolynomial <$> modPoly p d
+modPolyG (ComplexPolynomial p) (ComplexPolynomial d) =
+  ComplexPolynomial <$> modPoly p d
+modPolyG (RealPolynomial p) (ComplexPolynomial d) = ComplexPolynomial <$>
+  mapPoly realToComplex p `modPoly` d
+modPolyG (ComplexPolynomial p) (RealPolynomial d) = ComplexPolynomial <$>
+  p `modPoly` mapPoly realToComplex d
 
 {-|
 Compute polynomial modulo. Only supports the situation where the first
@@ -219,7 +261,8 @@ factorDPToDPs :: Floating a => Int -> a -> (BruunDivisor a, BruunDivisor a)
 factorDPToDPs n c =
   let n' = n `div` 2
       c' = sqrt (2 - c)
-   in (BruunDivisorPlus n' c', BruunDivisorPlus n' (-c'))
+   in assert (n' >= 2)
+        (BruunDivisorPlus n' c', BruunDivisorPlus n' (-c'))
 
 -- | Factor divisor in plus form into two divisors in complex form.
 -- Doesn't check for pre-condition.

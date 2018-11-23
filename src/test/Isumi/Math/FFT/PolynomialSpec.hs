@@ -22,6 +22,10 @@ spec = do
       let actual = (PolyVecRep [1] :: Polynomial Double)
             `modPoly` PolyExpCoefRep [(0, 1)]
       (actual >>= polyToVecRep) `shouldBeAppx` Just [1]
+    it "returns -2+2i for 4x^3+3x^2+2x+1 `modPoly` x+i" $ do
+      let p = PolyVecRep [4, 3, 2, 1] :: Polynomial (Complex Double)
+          d = PolyExpCoefRep [(1, 1), (0, 0 :+ 1)]
+      (p `modPoly` d) `shouldBeAppx` Just (PolyVecRep [(-2) :+ 2])
   describe "polyMultiply'" $
     it "returns (x^3 + x) for x and (x^2 + 1)" $ do
       let expected = [(3, 1), (1, 1)] :: [(Int, Double)]
