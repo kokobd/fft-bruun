@@ -1,4 +1,5 @@
 packages: ./
 
 jobs: $ncpus
+with-compiler: ghc-8.6.2
 

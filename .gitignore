@@ -1,4 +1,4 @@
 dist*/
 /.ghc*
 /tags
-
+/*.project.local
