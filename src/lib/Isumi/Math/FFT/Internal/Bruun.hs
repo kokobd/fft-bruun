@@ -4,6 +4,7 @@ module Isumi.Math.FFT.Internal.Bruun
   ( fftDirect
   , cruN
   , fftBruun
+  , fftBruunC
   )
 where
 
@@ -20,12 +21,13 @@ import           Math.NumberTheory.Logarithms       (integerLog2)
 import           Isumi.Math.FFT.Internal.Polynomial
 import           Isumi.Math.FFT.Internal.Utils
 
-fftDirect :: UV.Vector Double -> UV.Vector (Complex Double)
+-- | Computes fft using definition.
+fftDirect :: UV.Vector (Complex Double) -> UV.Vector (Complex Double)
 fftDirect xs = UV.generate len genEntry
  where
   len = UV.length xs
   genEntry k = UV.sum . flip UV.imap xs $ \n xn ->
-    realToComplex xn * exp (coef * fromIntegral n * realToComplex k)
+    xn * exp (coef * fromIntegral n * realToComplex k)
   coef = (-2) * pi * compI / fromIntegral len
 
 {-|
@@ -35,11 +37,22 @@ cruN :: Int -> UV.Vector (Complex Double)
 cruN n = UV.generate n $ \k ->
   exp (realToComplex k * (-2) * pi * compI / fromIntegral n)
 
+-- | FFT with Bruun's algorithm, for real input
 fftBruun :: UV.Vector Double -> Maybe (UV.Vector (Complex Double))
-fftBruun xs =
+fftBruun = fftBruunG RealPolynomial
+
+-- | FFT with Bruun's alogrithm, for complex input
+fftBruunC :: UV.Vector (Complex Double) -> Maybe (UV.Vector (Complex Double))
+fftBruunC = fftBruunG ComplexPolynomial
+
+fftBruunG :: (UV.Unbox a, Floating a, Eq a)
+          => (Polynomial a -> RealOrComplexPolynomial Double)
+          -> UV.Vector a
+          -> Maybe (UV.Vector (Complex Double))
+fftBruunG f xs =
   if (not . isPowerOf2) n
      then Nothing
-     else let r0 = RealPolynomial . fromJust . polyFromVecRep . UV.reverse $ xs
+     else let r0 = f . fromJust . polyFromVecRep . UV.reverse $ xs
               d0 = BruunDivisorMinus n
            in Just $ fftBruun' (cruN n) (d0, r0)
   where
@@ -117,3 +130,4 @@ isPowerOf2 x = (1 `shiftL` integerLog2 (fromIntegral x)) == x
 extractListFromMaybe :: Maybe [a] -> [a]
 extractListFromMaybe Nothing   = []
 extractListFromMaybe (Just xs) = xs
+
