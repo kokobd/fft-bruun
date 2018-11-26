@@ -23,6 +23,9 @@ spec =
     it "works for a simple complex sample" $
       fftBruunC [1 :+ 4, 2 :+ 3, 3 :+ 2, 4 :+ 1] `shouldBeAppx` Just
         [10 :+ 10, 0 :+ 4, (-2) :+ 2, (-4) :+ 0]
+    it "works for input with trailing zeros" $
+      fftBruun [1, 1, 0, 0] `shouldBeAppx` Just
+        [2 :+ 0, 1 :+ (-1), 0, 1 :+ 1]
     it "gives same answer for all inputs as fftDirect" $ property $
       \(VectorOf2ExpSize xs) ->
         Just (fftDirect (realVToComplexV xs)) ~= fftBruun xs

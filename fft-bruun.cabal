@@ -28,16 +28,33 @@ library
   exposed-modules:
       Isumi.Math.FFT.Bruun
     , Isumi.Math.FFT.Internal.Bruun
+    , Isumi.Math.FFT.Internal.Bruun2D
     , Isumi.Math.FFT.Internal.Utils
     , Isumi.Math.FFT.Internal.Polynomial
     , Isumi.Math.AppxEq
+    , Isumi.Math.Complex
+    , Isumi.Math.MatrixUtil
     , Isumi.Debug.Trace
+    , Isumi.Math.FFT.Image
+    , Isumi.Math.FFT.MatLab
   build-depends:
       vector
     , monad-loops
     , integer-logarithms
     , unordered-containers
+    , hmatrix
+    , JuicyPixels
+  ghc-options: -Wall
   default-language: Haskell2010
+  -- include-dirs: cinclude
+  -- includes:
+  --     fft_bruun/fft.hpp
+  c-sources:
+      csrc/fft.cpp
+  extra-libraries:
+      stdc++
+    , MatlabEngine
+    , MatlabDataArray
 
 test-suite fft-bruun-test
   import: deps
@@ -47,6 +64,7 @@ test-suite fft-bruun-test
   other-modules:
       Isumi.Math.FFT.PolynomialSpec
     , Isumi.Math.FFT.BruunSpec
+    , Isumi.Math.FFT.MatLabSpec
     , Isumi.Hspec
   build-depends:
       fft-bruun
