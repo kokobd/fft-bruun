@@ -60,10 +60,7 @@ instance (UV.Unbox a, AppxEq a) => AppxEq (Polynomial a) where
 -- Coefficients of higher degree entries are stored first.
 polyFromVecRep :: (UV.Unbox a, Floating a, Eq a)
                => UV.Vector a -> Maybe (Polynomial a)
-polyFromVecRep cs =
-  if UV.length cs > 0 && cs UV.! 0 == 0
-     then Nothing
-     else Just (PolyVecRep cs)
+polyFromVecRep cs = Just . PolyVecRep $ UV.dropWhile (== 0) cs
 
 -- | Construct a polynomial from a list of (exponent, coefficient) pairs
 --

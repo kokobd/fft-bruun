@@ -1,4 +1,5 @@
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE MultiWayIf #-}
 
 module Isumi.Math.FFT.Internal.Bruun
   ( fftDirect
@@ -50,11 +51,12 @@ fftBruunG :: (UV.Unbox a, Floating a, Eq a)
           -> UV.Vector a
           -> Maybe (UV.Vector (Complex Double))
 fftBruunG f xs =
-  if (not . isPowerOf2) n
-     then Nothing
-     else let r0 = f . fromJust . polyFromVecRep . UV.reverse $ xs
-              d0 = BruunDivisorMinus n
-           in Just $ fftBruun' (cruN n) (d0, r0)
+  if | (not . isPowerOf2) n -> Nothing
+     | UV.all (== 0) xs -> Just $ UV.replicate n 0
+     | otherwise -> 
+       let r0 = f . fromJust . polyFromVecRep . UV.reverse $ xs
+           d0 = BruunDivisorMinus n
+        in Just $ fftBruun' (cruN n) (d0, r0)
   where
   n = UV.length xs
 
