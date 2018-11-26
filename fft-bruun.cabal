@@ -34,7 +34,6 @@ library
     , Isumi.Debug.Trace
   build-depends:
       vector
-    , mono-traversable
     , monad-loops
     , integer-logarithms
     , unordered-containers
@@ -53,6 +52,5 @@ test-suite fft-bruun-test
       fft-bruun
     , hspec
     , QuickCheck
-    , fft
   default-language: Haskell2010
 
