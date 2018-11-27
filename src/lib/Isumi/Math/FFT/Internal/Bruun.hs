@@ -28,8 +28,8 @@ fftDirect xs = UV.generate len genEntry
  where
   len = UV.length xs
   genEntry k = UV.sum . flip UV.imap xs $ \n xn ->
-    xn * exp (coef * fromIntegral n * realToComplex k)
-  coef = (-2) * pi * compI / fromIntegral len
+    (crus UV.! k)^n * xn
+  crus = cruN len
 
 {-|
   Computes the complex roots of unity
