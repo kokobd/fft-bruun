@@ -19,7 +19,7 @@ source-repository head
 common deps
   build-depends:
       base >= 4.10 && < 5
-    , vector
+    , vector >= 0.12.0 && < 0.13
   ghc-options: -Wall
 
 library
@@ -36,25 +36,14 @@ library
     , Isumi.Math.MatrixUtil
     , Isumi.Debug.Trace
     , Isumi.Math.FFT.Image
-    , Isumi.Math.FFT.MatLab
   build-depends:
-      vector
-    , monad-loops
-    , integer-logarithms
-    , unordered-containers
-    , hmatrix
-    , JuicyPixels
+      monad-loops >= 0.4.3 && < 0.5
+    , integer-logarithms >= 1.0.2 && < 1.1
+    , unordered-containers >= 0.2.9 && < 0.3
+    , hmatrix >= 0.19.0 && < 0.20
+    , JuicyPixels >= 3.3.2 && < 3.4
   ghc-options: -Wall
   default-language: Haskell2010
-  -- include-dirs: cinclude
-  -- includes:
-  --     fft_bruun/fft.hpp
-  c-sources:
-      csrc/fft.cpp
-  extra-libraries:
-      stdc++
-    , MatlabEngine
-    , MatlabDataArray
 
 test-suite fft-bruun-test
   import: deps
@@ -64,11 +53,26 @@ test-suite fft-bruun-test
   other-modules:
       Isumi.Math.FFT.PolynomialSpec
     , Isumi.Math.FFT.BruunSpec
-    , Isumi.Math.FFT.MatLabSpec
+    , Isumi.Math.FFT.SpecUtil
     , Isumi.Hspec
   build-depends:
       fft-bruun
-    , hspec
-    , QuickCheck
+    , hspec >= 2.6.0 && < 2.7
+    , QuickCheck >= 2.12.6 && < 2.13
+  default-language: Haskell2010
+
+benchmark fft-bruun-bench
+  import: deps
+  type: exitcode-stdio-1.0
+  hs-source-dirs: src/bench
+  main-is: Main.hs
+  ghc-options:
+      -threaded
+      -with-rtsopts=-N2
+  build-depends:
+      fft-bruun
+    , criterion >= 1.5.3 && < 1.6
+    , deepseq >= 1.4.4 && < 1.5
+    , MonadRandom >= 0.5.1 && < 0.6
   default-language: Haskell2010
 
