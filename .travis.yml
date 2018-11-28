@@ -1,0 +1,28 @@
+dist: xenial
+language: haskell
+
+ghc:
+- "8.6.2"
+
+cabal:
+- "2.4"
+
+addons:
+  apt:
+    packages:
+    - libblas-dev
+    - liblapack-dev
+    - gsl-bin
+    - libgsl-dev
+
+install:
+- cabal v2-update
+- cabal v2-build --only-dependencies all
+
+script:
+- cabal v2-build all && cabal v2-test all
+
+cache:
+  directories:
+  - dist-newstyle
+  - $HOME/.cabal
