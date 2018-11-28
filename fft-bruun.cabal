@@ -55,6 +55,8 @@ test-suite fft-bruun-test
     , Isumi.Math.FFT.BruunSpec
     , Isumi.Math.FFT.SpecUtil
     , Isumi.Hspec
+  build-tool-depends:
+      hspec-discover:hspec-discover
   build-depends:
       fft-bruun
     , hspec >= 2.6.0 && < 2.7
