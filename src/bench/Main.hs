@@ -1,14 +1,13 @@
 module Main where
 
 import           Isumi.Math.FFT.Bruun
-import           Isumi.Math.FFT.MatLab
 
+import           Control.DeepSeq            (NFData)
 import           Control.Monad.Random.Class
 import           Criterion.Main
 import           Criterion.Types
 import           Data.Complex
-import qualified Data.Vector.Unboxed         as UV
-import Control.DeepSeq(NFData)
+import qualified Data.Vector.Unboxed        as UV
 
 main :: IO ()
 main = do
